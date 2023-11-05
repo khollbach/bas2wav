@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -e
+
+usage() {
+    echo usage:
+    echo "    BT=/path/to/AppleCommander-bastools-bt.jar $0 basic-program.bas"
+    exit 1
+}
+
+echo_run() {
+    echo "$@"
+    "$@"
+}
+
+main() {
+    if [[ -z "$BT" ]]; then
+        usage
+    fi
+    if [[ $# -ne 1 ]]; then
+        usage
+    fi
+    local file=$1
+    local name=${file%.*}
+    local ext=${file##*.}
+    if [[ "$ext" -ne bas ]]; then
+        usage
+    fi
+
+    echo_run java -jar "$BT" "$file" -o "$name".tok
+
+    # Note that in the header format, the length field is deliberately
+    # off-by-one. I haven't come across any docs mentioning this (though I
+    # haven't explicitly looked), but I did verify it experimentally.
+    #
+    # In particular, this means that it's possible for the BASIC code segment
+    # to contain exactly 64KiB of data, but it cannot be empty.
+    echo Creating header file...
+    local len=$(wc --bytes "$name".tok | cut -d' ' -f1)
+    if [[ "$len" -eq 0 ]]; then
+        echo "error: can't encode empty segment"
+        exit 1
+    fi
+    len=$((len - 1))  # !!!
+    local len_low=$(printf '%02x' $(($len % 256)))
+    local len_high=$(printf '%02x' $(($len / 256)))
+    echo -en "\\x$len_low\\x$len_high\\x55" > "$name".hdr
+
+    echo_run c2t -2 "$name".hdr,0 "$name".tok,0 "$name".wav
+
+    echo Saved to "$name".wav
+    echo
+    echo '*******************************************'
+    echo '* Ignore the above instructions. Instead: *'
+    echo '*******************************************'
+    echo
+    echo Type LOAD from the BASIC prompt on the Apple II,
+    echo connect an audio cable, and play the .wav file.
+}
+
+main "$@"
