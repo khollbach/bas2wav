@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+a2kit = "2.4.1"
+anyhow = "1.0.75"
+hound = "3.5.1"
+itertools = "0.11.0"
