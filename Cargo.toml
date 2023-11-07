@@ -1,6 +1,6 @@
 [package]
 name = "bas2wav"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Convert AppleSoft BASIC source code into .wav file, for transfer to Apple II"
 license = "MIT"
